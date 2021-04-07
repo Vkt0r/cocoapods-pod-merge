@@ -520,6 +520,9 @@ module CocoapodsPodMerge
       Pod::UI.puts "\tCreating Podspec for the merged framework".magenta
       create_podspec(merged_framework_name, pods_to_merge, PodspecInfo.new(frameworks.uniq, prefix_header_contents.uniq, private_header_files.uniq, resources.uniq, script_phases.uniq, compiler_flags.uniq, libraries.uniq, prepare_command.uniq, resource_bundles, vendored_libraries.uniq, swift_version), mixed_language_group, podfile_info)
 
+      # Create the 
+      Pod::UI.puts "\tCreating the header file for the merged framework".magenta
+      create_header_objc_compatibility(merged_framework_name)
       Pod::UI.puts 'Cleaning up cache'.cyan
       FileUtils.rm_rf(CacheDirectory)
 
@@ -667,6 +670,32 @@ module CocoapodsPodMerge
       module_map.puts("\n}")
       module_map.close
     end
+
+    def create_header_objc_compatibility(merged_framework_name)
+
+      header = %(
+        //
+        //  #{merged_framework_name}.h
+        //  #{merged_framework_name}
+        //
+        //  Created by Victor Sigler on 04/05/21.
+        //
+
+        #import <Foundation/Foundation.h>
+
+        //! Project version number for #{merged_framework_name}.
+        FOUNDATION_EXPORT double #{merged_framework_name}VersionNumber;
+
+        //! Project version string for #{merged_framework_name}.
+        FOUNDATION_EXPORT const unsigned char #{merged_framework_name}VersionString[];
+
+        // In this header, you should import all the public headers of your framework using statements like #import <#{merged_framework_name}/PublicHeader.h>
+      )
+
+      file = File.new("#{InstallationDirectory}/#{merged_framework_name}/Sources/#{merged_framework_name}.h", 'w')
+      file.puts(header)
+      file.close
+    end 
 
     def create_podspec(merged_framework_name, pods_to_merge, podspec_info, mixed_language_group, podfile_info)
       frameworks = podspec_info.frameworks
