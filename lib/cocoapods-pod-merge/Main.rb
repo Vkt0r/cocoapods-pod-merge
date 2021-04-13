@@ -432,10 +432,11 @@ module CocoapodsPodMerge
           public_headers_by_pod[pod] = Dir.glob('**/*.h').map { |header| File.basename(header) }
 
           Dir.glob('**/*.{h,m,mm,swift}').each do |source_file|
-            contents = File.read(source_file)
             if has_dependencies
               # Fix imports of style import xx
               pods_to_merge.each do |pod|
+                contents = File.read(source_file)
+
                 modular_imports = contents.scan(%r{<#{pod}/(.+)>})
                 next unless modular_imports&.last
 
@@ -448,6 +449,7 @@ module CocoapodsPodMerge
 
               # Fix imports of style import xx
               pods_to_merge.each do |pod|
+                contents = File.read(source_file)
                 file_path = File.join(File.expand_path('../..'), "Podspecs/#{pod}.json")
                 pod_name = pod
 
@@ -461,10 +463,12 @@ module CocoapodsPodMerge
                 modular_imports = contents.scan("import #{pod_name}")
                 next unless modular_imports&.last
 
-                Pod::UI.puts "\t\tExperimental: ".yellow + "Found a module import in #{source_file}, fixing this by removing it".magenta
-                File.open(source_file, 'w') { |file| file.puts contents.gsub("import #{pod_name}", '') }
+                Pod::UI.puts "\t\tExperimental: ".yellow + "Found a module import of #{pod_name} in #{source_file}, fixing this by removing it".magenta
+                File.open(source_file, 'w') { |file| file.puts contents.gsub(/^import #{pod_name}$/, '') }
               end
             else
+              contents = File.read(source_file)
+
               modular_imports = contents.scan(%r{<#{pod}/(.+)>})
               next unless modular_imports&.last
 
