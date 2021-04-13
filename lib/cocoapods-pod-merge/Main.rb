@@ -448,11 +448,21 @@ module CocoapodsPodMerge
 
               # Fix imports of style import xx
               pods_to_merge.each do |pod|
-                modular_imports = contents.scan("import #{pod}")
+                file_path = File.join(File.expand_path('../..'), "Podspecs/#{pod}.json")
+                pod_name = pod
+
+                if File.exist? file_path
+                  File.open(file_path, 'r') do |podspec_file|
+                    podspec = JSON.load podspec_file
+                    pod_name = podspec['module_name'] if podspec['module_name']
+                  end
+                end 
+                
+                modular_imports = contents.scan("import #{pod_name}")
                 next unless modular_imports&.last
 
                 Pod::UI.puts "\t\tExperimental: ".yellow + "Found a module import in #{source_file}, fixing this by removing it".magenta
-                File.open(source_file, 'w') { |file| file.puts contents.gsub("import #{pod}", '') }
+                File.open(source_file, 'w') { |file| file.puts contents.gsub("import #{pod_name}", '') }
               end
             else
               modular_imports = contents.scan(%r{<#{pod}/(.+)>})
